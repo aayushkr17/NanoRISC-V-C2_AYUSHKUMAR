@@ -1,11 +1,3 @@
-// =============================================================================
-// File: control_unit_tb.v
-// Module: control_unit_tb
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Dedicated testbench for control_unit module with GTKWave VCD
-//              waveform dump support and automated assertions.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module control_unit_tb;
@@ -27,7 +19,6 @@ module control_unit_tb;
 
     integer errors = 0;
 
-    // Instantiate UUT
     control_unit uut (
         .opcode(opcode),
         .funct3(funct3),
@@ -53,7 +44,6 @@ module control_unit_tb;
         $display("Starting Testbench: control_unit_tb");
         $display("--------------------------------------------------");
 
-        // Test 1: R-type ADD (opcode 0110011, funct3 000, funct7 0000000)
         opcode = 7'b0110011; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (reg_write !== 1'b1 || alu_ctrl !== 4'b0000 || alu_src_b !== 1'b0 || mem_to_reg !== 2'b00) begin
@@ -63,7 +53,6 @@ module control_unit_tb;
             $display("[PASS] R-type ADD decode verified");
         end
 
-        // Test 2: R-type SUB (opcode 0110011, funct3 000, funct7 0100000)
         opcode = 7'b0110011; funct3 = 3'b000; funct7 = 7'b0100000;
         #5;
         if (reg_write !== 1'b1 || alu_ctrl !== 4'b0001) begin
@@ -73,7 +62,6 @@ module control_unit_tb;
             $display("[PASS] R-type SUB decode verified");
         end
 
-        // Test 3: I-type ADDI (opcode 0010011, funct3 000)
         opcode = 7'b0010011; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (reg_write !== 1'b1 || alu_src_b !== 1'b1 || imm_src !== 3'b000 || alu_ctrl !== 4'b0000) begin
@@ -82,8 +70,6 @@ module control_unit_tb;
         end else begin
             $display("[PASS] I-type ADDI decode verified");
         end
-
-        // Test 4: Load LW (opcode 0000011, funct3 010)
         opcode = 7'b0000011; funct3 = 3'b010; funct7 = 7'b0000000;
         #5;
         if (reg_write !== 1'b1 || mem_read !== 1'b1 || mem_to_reg !== 2'b01) begin
@@ -92,8 +78,6 @@ module control_unit_tb;
         end else begin
             $display("[PASS] Load LW decode verified");
         end
-
-        // Test 5: Store SW (opcode 0100011, funct3 010)
         opcode = 7'b0100011; funct3 = 3'b010; funct7 = 7'b0000000;
         #5;
         if (reg_write !== 1'b0 || mem_write !== 1'b1 || imm_src !== 3'b001) begin
@@ -103,7 +87,6 @@ module control_unit_tb;
             $display("[PASS] Store SW decode verified");
         end
 
-        // Test 6: Branch BEQ (opcode 1100011, funct3 000)
         opcode = 7'b1100011; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (branch !== 1'b1 || reg_write !== 1'b0 || imm_src !== 3'b010) begin
@@ -112,8 +95,6 @@ module control_unit_tb;
         end else begin
             $display("[PASS] Branch BEQ decode verified");
         end
-
-        // Test 7: JAL (opcode 1101111)
         opcode = 7'b1101111; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (jump !== 1'b1 || is_jalr !== 1'b0 || mem_to_reg !== 2'b10 || reg_write !== 1'b1) begin
@@ -122,8 +103,6 @@ module control_unit_tb;
         end else begin
             $display("[PASS] JAL decode verified");
         end
-
-        // Test 8: JALR (opcode 1100111)
         opcode = 7'b1100111; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (jump !== 1'b1 || is_jalr !== 1'b1 || mem_to_reg !== 2'b10 || reg_write !== 1'b1) begin
@@ -133,7 +112,6 @@ module control_unit_tb;
             $display("[PASS] JALR decode verified");
         end
 
-        // Test 9: LUI (opcode 0110111)
         opcode = 7'b0110111; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (alu_ctrl !== 4'b1010 || reg_write !== 1'b1 || imm_src !== 3'b011) begin
@@ -143,7 +121,6 @@ module control_unit_tb;
             $display("[PASS] LUI decode verified");
         end
 
-        // Test 10: AUIPC (opcode 0010111)
         opcode = 7'b0010111; funct3 = 3'b000; funct7 = 7'b0000000;
         #5;
         if (alu_src_a !== 1'b1 || alu_src_b !== 1'b1 || reg_write !== 1'b1) begin
