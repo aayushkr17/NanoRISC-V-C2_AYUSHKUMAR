@@ -1,11 +1,3 @@
-// =============================================================================
-// File: register_file_tb.v
-// Module: register_file_tb
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Dedicated testbench for register_file module with GTKWave VCD
-//              waveform dump support and automated assertions.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module register_file_tb;
@@ -21,8 +13,6 @@ module register_file_tb;
     wire [31:0] rdata2;
 
     integer errors = 0;
-
-    // Instantiate UUT
     register_file uut (
         .clk(clk),
         .rst_n(rst_n),
@@ -35,7 +25,6 @@ module register_file_tb;
         .rdata2(rdata2)
     );
 
-    // Clock generator (50 MHz)
     always #10 clk = ~clk;
 
     initial begin
@@ -58,7 +47,6 @@ module register_file_tb;
         rst_n = 1;
         #5;
 
-        // Test 1: Check that reset clears registers (test x1 and x2)
         raddr1 = 5'd1;
         raddr2 = 5'd2;
         #5;
@@ -68,8 +56,6 @@ module register_file_tb;
         end else begin
             $display("[PASS] Reset state verified: x1 = 0, x2 = 0");
         end
-
-        // Test 2: Attempt writing to x0 (should remain 0)
         @(negedge clk);
         we    = 1;
         waddr = 5'd0;
@@ -85,9 +71,7 @@ module register_file_tb;
         end else begin
             $display("[PASS] Hardwired x0 verified: remains 0 after write attempt");
         end
-
-        // Test 3: Write and read general purpose registers (x1, x2, x31)
-        @(negedge clk);
+         @(negedge clk);
         we    = 1;
         waddr = 5'd1;
         wdata = 32'h11112222;
@@ -106,8 +90,6 @@ module register_file_tb;
         @(posedge clk);
         #1;
         we = 0;
-
-        // Read back
         raddr1 = 5'd1;
         raddr2 = 5'd2;
         #5;
@@ -126,14 +108,12 @@ module register_file_tb;
         end else begin
             $display("[PASS] Readback x31 verified: 0x%08h", rdata1);
         end
-
-        // Test 4: Internal write forwarding / same-cycle bypass
         @(negedge clk);
         we     = 1;
         waddr  = 5'd5;
         wdata  = 32'hFACECAFE;
         raddr1 = 5'd5;
-        #5; // Before rising edge!
+        #5;
         if (rdata1 !== 32'hFACECAFE) begin
             $display("[FAIL] Internal forwarding bypass failed: got %h", rdata1);
             errors = errors + 1;
