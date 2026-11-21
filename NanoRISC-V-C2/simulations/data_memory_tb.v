@@ -1,12 +1,3 @@
-// =============================================================================
-// File: data_memory_tb.v
-// Module: data_memory_tb
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Dedicated testbench for data_memory module testing all RV32I
-//              load/store combinations (LB, LH, LW, LBU, LHU, SB, SH, SW)
-//              with GTKWave VCD waveform dump support.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module data_memory_tb;
@@ -22,7 +13,6 @@ module data_memory_tb;
 
     integer errors = 0;
 
-    // Instantiate UUT
     data_memory #(
         .MEM_DEPTH(64)
     ) uut (
@@ -36,7 +26,6 @@ module data_memory_tb;
         .rdata(rdata)
     );
 
-    // Clock generator (50 MHz)
     always #10 clk = ~clk;
 
     initial begin
@@ -59,19 +48,17 @@ module data_memory_tb;
         rst_n = 1;
         #5;
 
-        // Test 1: Store Word (SW) and Load Word (LW)
         @(negedge clk);
         mem_write = 1;
-        funct3    = 3'b010; // SW
+        funct3    = 3'b010;
         addr      = 32'h00000008;
         wdata     = 32'h12345678;
         @(posedge clk);
         #1;
         mem_write = 0;
 
-        // Read back with LW
         mem_read = 1;
-        funct3   = 3'b010; // LW
+        funct3   = 3'b010;
         addr     = 32'h00000008;
         #5;
         if (rdata !== 32'h12345678) begin
@@ -82,20 +69,17 @@ module data_memory_tb;
         end
         mem_read = 0;
 
-        // Test 2: Store Byte (SB) and Load Byte Signed (LB) with negative byte (0xFE)
-        // Store byte at address 0x00000010 (offset 0)
         @(negedge clk);
         mem_write = 1;
-        funct3    = 3'b000; // SB
+        funct3    = 3'b000;
         addr      = 32'h00000010;
-        wdata     = 32'h000000FE; // Negative 8-bit value (-2)
+        wdata     = 32'h000000FE;
         @(posedge clk);
         #1;
         mem_write = 0;
 
-        // Read with LB (signed): should sign-extend 0xFE to 0xFFFFFFFE (-2)
         mem_read = 1;
-        funct3   = 3'b000; // LB
+        funct3   = 3'b000; 
         addr     = 32'h00000010;
         #5;
         if (rdata !== 32'hFFFFFFFE) begin
@@ -104,9 +88,7 @@ module data_memory_tb;
         end else begin
             $display("[PASS] LB signed extension verified: 0x%08h", rdata);
         end
-
-        // Read with LBU (unsigned): should zero-extend to 0x000000FE (254)
-        funct3 = 3'b100; // LBU
+        funct3 = 3'b100; 
         #5;
         if (rdata !== 32'h000000FE) begin
             $display("[FAIL] LBU zero extension failed: expected 0x000000FE, got 0x%08h", rdata);
@@ -116,20 +98,17 @@ module data_memory_tb;
         end
         mem_read = 0;
 
-        // Test 3: Store Halfword (SH) and Load Halfword Signed (LH) / Unsigned (LHU)
-        // Store 0x8ABC at byte offset 2 of word 0x14 -> addr = 0x00000016
         @(negedge clk);
         mem_write = 1;
-        funct3    = 3'b001; // SH
+        funct3    = 3'b001;
         addr      = 32'h00000016;
         wdata     = 32'h00008ABC;
         @(posedge clk);
         #1;
         mem_write = 0;
 
-        // Read back with LH (signed, should sign-extend 0x8ABC -> 0xFFFF8ABC)
         mem_read = 1;
-        funct3   = 3'b001; // LH
+        funct3   = 3'b001; 
         addr     = 32'h00000016;
         #5;
         if (rdata !== 32'hFFFF8ABC) begin
@@ -139,8 +118,7 @@ module data_memory_tb;
             $display("[PASS] LH signed extension verified: 0x%08h", rdata);
         end
 
-        // Read back with LHU (unsigned, should zero-extend -> 0x00008ABC)
-        funct3 = 3'b101; // LHU
+        funct3 = 3'b101;
         #5;
         if (rdata !== 32'h00008ABC) begin
             $display("[FAIL] LHU zero extension failed: expected 0x00008ABC, got 0x%08h", rdata);
