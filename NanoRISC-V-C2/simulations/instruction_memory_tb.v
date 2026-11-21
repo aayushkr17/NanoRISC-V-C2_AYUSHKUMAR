@@ -1,11 +1,3 @@
-// =============================================================================
-// File: instruction_memory_tb.v
-// Module: instruction_memory_tb
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Dedicated testbench for instruction_memory module with GTKWave
-//              VCD waveform dump support.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module instruction_memory_tb;
@@ -15,7 +7,6 @@ module instruction_memory_tb;
 
     integer errors = 0;
 
-    // Instantiate UUT
     instruction_memory #(
         .MEM_DEPTH(64)
     ) uut (
@@ -24,22 +15,21 @@ module instruction_memory_tb;
     );
 
     initial begin
-        // Waveform generation for GTKWave
+ 
         $dumpfile("instruction_memory.vcd");
         $dumpvars(0, instruction_memory_tb);
 
         $display("--------------------------------------------------");
         $display("Starting Testbench: instruction_memory_tb");
         $display("--------------------------------------------------");
-
-        // Preload sample test instructions into UUT memory
-        uut.mem[0] = 32'h00A00093; // addi x1, x0, 10
-        uut.mem[1] = 32'h01400113; // addi x2, x0, 20
-        uut.mem[2] = 32'h002081B3; // add  x3, x1, x2
-        uut.mem[3] = 32'h40110233; // sub  x4, x2, x1
+        
+        uut.mem[0] = 32'h00A00093;
+        uut.mem[1] = 32'h01400113;
+        uut.mem[2] = 32'h002081B3; 
+        uut.mem[3] = 32'h40110233; 
 
         #10;
-        // Test word 0 at byte address 0x00000000
+
         addr = 32'h00000000;
         #5;
         if (instr !== 32'h00A00093) begin
@@ -49,7 +39,7 @@ module instruction_memory_tb;
             $display("[PASS] Addr 0x00: Correctly fetched 0x%08h", instr);
         end
 
-        // Test word 1 at byte address 0x00000004
+    
         addr = 32'h00000004;
         #5;
         if (instr !== 32'h01400113) begin
@@ -59,7 +49,6 @@ module instruction_memory_tb;
             $display("[PASS] Addr 0x04: Correctly fetched 0x%08h", instr);
         end
 
-        // Test word 2 at byte address 0x00000008
         addr = 32'h00000008;
         #5;
         if (instr !== 32'h002081B3) begin
@@ -69,7 +58,6 @@ module instruction_memory_tb;
             $display("[PASS] Addr 0x08: Correctly fetched 0x%08h", instr);
         end
 
-        // Test word 3 at byte address 0x0000000C
         addr = 32'h0000000C;
         #5;
         if (instr !== 32'h40110233) begin
@@ -79,7 +67,6 @@ module instruction_memory_tb;
             $display("[PASS] Addr 0x0C: Correctly fetched 0x%08h", instr);
         end
 
-        // Test uninitialized location (should return NOP 0x00000013)
         addr = 32'h00000020;
         #5;
         if (instr !== 32'h00000013) begin
@@ -89,7 +76,6 @@ module instruction_memory_tb;
             $display("[PASS] Addr 0x20 (default): Correctly fetched NOP 0x%08h", instr);
         end
 
-        // Test out-of-bounds address (should return NOP 0x00000013)
         addr = 32'h00001000;
         #5;
         if (instr !== 32'h00000013) begin
