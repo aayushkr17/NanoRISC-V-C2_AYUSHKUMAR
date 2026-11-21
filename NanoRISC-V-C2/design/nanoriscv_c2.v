@@ -1,61 +1,42 @@
-// =============================================================================
-// File: nanoriscv_c2.v
-// Module: nanoriscv_c2
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Top-Level Wrapper for the NanoRISC-V-C2 2-stage pipelined RV32I
-//              processor core:
-//              - Stage 1: Instruction Fetch (PC + Instruction Memory)
-//              - Pipeline Register: IF/EX register with flush/stall support
-//              - Stage 2: Instruction Decode, Register File, Immediate Gen,
-//                         ALU, Branch Unit, Data Memory, and Writeback.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module nanoriscv_c2 #(
-    parameter IMEM_DEPTH = 1024, // Instruction memory depth (words)
-    parameter DMEM_DEPTH = 1024  // Data memory depth (words)
+    parameter IMEM_DEPTH = 1024,
+    parameter DMEM_DEPTH = 1024 
 )(
-    input  wire        clk,            // System Clock
-    input  wire        rst_n,          // Active-low asynchronous reset
+    input  wire        clk,       
+    input  wire        rst_n,      
 
-    // Top-Level Debug & Waveform Observation Probes
-    output wire [31:0] debug_pc_if,        // Current Fetch Stage PC
-    output wire [31:0] debug_instr_if,     // Instruction fetched in Stage 1
-    output wire [31:0] debug_pc_ex,        // Current Execute Stage PC
-    output wire [31:0] debug_instr_ex,     // Instruction executing in Stage 2
-    output wire        debug_valid_ex,     // Valid instruction in Stage 2
-    output wire [31:0] debug_alu_result,   // ALU result
-    output wire [31:0] debug_reg_wdata,    // Register file writeback data
-    output wire        debug_reg_write,    // Register file write enable
-    output wire [4:0]  debug_reg_waddr,    // Register file destination (rd)
-    output wire        debug_mem_write,    // Data memory write enable
-    output wire [31:0] debug_mem_addr,     // Data memory access address
-    output wire [31:0] debug_mem_wdata,    // Data memory store data
-    output wire        debug_pc_sel,       // Branch/Jump taken redirection
-    output wire [31:0] debug_pc_target     // Branch/Jump target address
+    output wire [31:0] debug_pc_if,     
+    output wire [31:0] debug_instr_if,  
+    output wire [31:0] debug_pc_ex,      
+    output wire [31:0] debug_instr_ex,  
+    output wire        debug_valid_ex,  
+    output wire [31:0] debug_alu_result, 
+    output wire [31:0] debug_reg_wdata,   
+    output wire        debug_reg_write,  
+    output wire [4:0]  debug_reg_waddr,  
+    output wire        debug_mem_write,  
+    output wire [31:0] debug_mem_addr,   
+    output wire [31:0] debug_mem_wdata,  
+    output wire        debug_pc_sel,    
+    output wire [31:0] debug_pc_target  
 );
 
-    // =========================================================================
-    // Stage 1: Instruction Fetch (IF) Interconnects
-    // =========================================================================
     wire [31:0] pc_if;
     wire [31:0] pc_next;
     wire [31:0] instr_if;
 
-    // Next PC selection: redirected target if branch/jump taken, else sequential PC+4
     assign pc_next = debug_pc_sel ? debug_pc_target : (pc_if + 32'd4);
 
-    // Program Counter Instance
     program_counter pc_u (
         .clk(clk),
         .rst_n(rst_n),
-        .pc_write(1'b1), // Unstalled execution
+        .pc_write(1'b1), 
         .pc_next(pc_next),
         .pc(pc_if)
     );
 
-    // Instruction Memory Instance
     instruction_memory #(
         .MEM_DEPTH(IMEM_DEPTH)
     ) imem_u (
@@ -63,9 +44,6 @@ module nanoriscv_c2 #(
         .instr(instr_if)
     );
 
-    // =========================================================================
-    // Pipeline Register: Stage 1 (IF) to Stage 2 (EX)
-    // =========================================================================
     wire [31:0] pc_ex;
     wire [31:0] instr_ex;
     wire        valid_ex;
@@ -73,7 +51,7 @@ module nanoriscv_c2 #(
     pipe_reg pipe_u (
         .clk(clk),
         .rst_n(rst_n),
-        .flush(debug_pc_sel), // Flush on branch/jump redirect
+        .flush(debug_pc_sel),
         .stall(1'b0),
         .pc_in(pc_if),
         .instr_in(instr_if),
@@ -83,10 +61,6 @@ module nanoriscv_c2 #(
         .valid_out(valid_ex)
     );
 
-    // =========================================================================
-    // Stage 2: Decode / Execute / Memory / Writeback (EX)
-    // =========================================================================
-    // Instruction fields
     wire [6:0] opcode = instr_ex[6:0];
     wire [4:0] rd     = instr_ex[11:7];
     wire [2:0] funct3 = instr_ex[14:12];
@@ -94,7 +68,6 @@ module nanoriscv_c2 #(
     wire [4:0] rs2    = instr_ex[24:20];
     wire [6:0] funct7 = instr_ex[31:25];
 
-    // Raw control signals from Control Unit
     wire       raw_reg_write;
     wire       raw_mem_read;
     wire       raw_mem_write;
@@ -107,7 +80,6 @@ module nanoriscv_c2 #(
     wire       is_jalr;
     wire [2:0] imm_src;
 
-    // Control Unit Instance
     control_unit ctrl_u (
         .opcode(opcode),
         .funct3(funct3),
@@ -125,14 +97,12 @@ module nanoriscv_c2 #(
         .imm_src(imm_src)
     );
 
-    // Gate control signals with valid_ex to suppress flushed bubbles / reset states
     wire reg_write = raw_reg_write & valid_ex;
     wire mem_read  = raw_mem_read  & valid_ex;
     wire mem_write = raw_mem_write & valid_ex;
     wire branch    = raw_branch    & valid_ex;
     wire jump      = raw_jump      & valid_ex;
 
-    // Immediate Generator Instance
     wire [31:0] imm;
     imm_gen imm_u (
         .instr(instr_ex),
@@ -140,7 +110,6 @@ module nanoriscv_c2 #(
         .imm(imm)
     );
 
-    // Register File Instance
     wire [31:0] rdata1;
     wire [31:0] rdata2;
     reg  [31:0] reg_wdata;
@@ -157,11 +126,9 @@ module nanoriscv_c2 #(
         .rdata2(rdata2)
     );
 
-    // ALU Operands selection
     wire [31:0] alu_a = alu_src_a ? pc_ex : rdata1;
     wire [31:0] alu_b = alu_src_b ? imm   : rdata2;
 
-    // ALU Instance
     wire [31:0] alu_result;
     wire        alu_zero;
 
@@ -173,7 +140,6 @@ module nanoriscv_c2 #(
         .zero(alu_zero)
     );
 
-    // Branch Unit Instance
     wire        pc_sel;
     wire [31:0] pc_target;
 
@@ -190,7 +156,6 @@ module nanoriscv_c2 #(
         .pc_target(pc_target)
     );
 
-    // Data Memory Instance
     wire [31:0] mem_rdata;
 
     data_memory #(
@@ -206,19 +171,15 @@ module nanoriscv_c2 #(
         .rdata(mem_rdata)
     );
 
-    // Register Writeback Multiplexer
     always @(*) begin
         case (mem_to_reg)
-            2'b00: reg_wdata = alu_result;         // ALU arithmetic/logic result
-            2'b01: reg_wdata = mem_rdata;          // Data memory load data
-            2'b10: reg_wdata = pc_ex + 32'd4;      // Return address for JAL / JALR
+            2'b00: reg_wdata = alu_result;        
+            2'b01: reg_wdata = mem_rdata;        
+            2'b10: reg_wdata = pc_ex + 32'd4;    
             default: reg_wdata = alu_result;
         endcase
     end
 
-    // =========================================================================
-    // Probe Outputs for GTKWave and External Verification
-    // =========================================================================
     assign debug_pc_if      = pc_if;
     assign debug_instr_if   = instr_if;
     assign debug_pc_ex      = pc_ex;
