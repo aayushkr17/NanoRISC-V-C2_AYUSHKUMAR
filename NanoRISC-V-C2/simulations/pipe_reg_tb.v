@@ -1,11 +1,3 @@
-// =============================================================================
-// File: pipe_reg_tb.v
-// Module: pipe_reg_tb
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Dedicated testbench for the pipe_reg module with GTKWave VCD
-//              waveform dump support.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module pipe_reg_tb;
@@ -22,8 +14,6 @@ module pipe_reg_tb;
     wire        valid_out;
 
     integer errors = 0;
-
-    // Instantiate UUT
     pipe_reg uut (
         .clk(clk),
         .rst_n(rst_n),
@@ -37,8 +27,8 @@ module pipe_reg_tb;
         .valid_out(valid_out)
     );
 
-    // Clock generator (50 MHz)
-    always #10 clk = ~clk;
+  
+  always #10 clk = ~clk;
 
     initial begin
         $dumpfile("pipe_reg.vcd");
@@ -59,7 +49,6 @@ module pipe_reg_tb;
         #25;
         rst_n = 1;
         #1;
-        // Check reset state: should be NOP and invalid
         if (instr_out !== 32'h00000013 || valid_out !== 1'b0) begin
             $display("[FAIL] Reset state incorrect: instr=0x%08h, valid=%b", instr_out, valid_out);
             errors = errors + 1;
@@ -67,7 +56,6 @@ module pipe_reg_tb;
             $display("[PASS] Reset state verified");
         end
 
-        // Test 1: Normal propagation
         @(negedge clk);
         pc_in    = 32'h00000004;
         instr_in = 32'h12345678;
@@ -81,7 +69,6 @@ module pipe_reg_tb;
             $display("[PASS] Normal pipeline propagation verified");
         end
 
-        // Test 2: Stall holding value
         @(negedge clk);
         stall    = 1;
         pc_in    = 32'h00000008;
@@ -96,7 +83,6 @@ module pipe_reg_tb;
             $display("[PASS] Stall hold verified");
         end
 
-        // Release stall
         @(negedge clk);
         stall = 0;
         @(posedge clk);
@@ -108,7 +94,6 @@ module pipe_reg_tb;
             $display("[PASS] Resume after stall verified");
         end
 
-        // Test 3: Flush (Branch/Jump redirect)
         @(negedge clk);
         flush    = 1;
         pc_in    = 32'h0000000C;
