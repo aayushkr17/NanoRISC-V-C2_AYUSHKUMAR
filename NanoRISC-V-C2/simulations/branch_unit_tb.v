@@ -1,11 +1,3 @@
-// =============================================================================
-// File: branch_unit_tb.v
-// Module: branch_unit_tb
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Dedicated testbench for branch_unit module with GTKWave VCD
-//              waveform dump support and automated assertions.
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module branch_unit_tb;
@@ -23,7 +15,6 @@ module branch_unit_tb;
 
     integer errors = 0;
 
-    // Instantiate UUT
     branch_unit uut (
         .branch(branch),
         .jump(jump),
@@ -45,7 +36,6 @@ module branch_unit_tb;
         $display("Starting Testbench: branch_unit_tb");
         $display("--------------------------------------------------");
 
-        // Test 1: BEQ Taken (rdata1 == rdata2)
         branch = 1; jump = 0; is_jalr = 0; funct3 = 3'b000;
         rdata1 = 32'd25; rdata2 = 32'd25; pc = 32'h00000100; imm = 32'd16;
         #5;
@@ -56,7 +46,6 @@ module branch_unit_tb;
             $display("[PASS] BEQ taken verified: target=0x%08h", pc_target);
         end
 
-        // Test 2: BEQ Untaken (rdata1 != rdata2)
         rdata2 = 32'd30;
         #5;
         if (pc_sel !== 1'b0) begin
@@ -66,7 +55,6 @@ module branch_unit_tb;
             $display("[PASS] BEQ untaken verified");
         end
 
-        // Test 3: BLT signed taken (-10 < 5)
         funct3 = 3'b100; rdata1 = -32'd10; rdata2 = 32'd5;
         #5;
         if (pc_sel !== 1'b1) begin
@@ -76,7 +64,6 @@ module branch_unit_tb;
             $display("[PASS] BLT signed taken verified");
         end
 
-        // Test 4: BLTU unsigned untaken (0xFFFFFFFF < 5 is false)
         funct3 = 3'b110; rdata1 = 32'hFFFFFFFF; rdata2 = 32'd5;
         #5;
         if (pc_sel !== 1'b0) begin
@@ -86,7 +73,6 @@ module branch_unit_tb;
             $display("[PASS] BLTU unsigned untaken verified");
         end
 
-        // Test 5: JAL (unconditional jump, target = pc + imm)
         branch = 0; jump = 1; is_jalr = 0;
         pc = 32'h00000200; imm = 32'h00000040;
         #5;
@@ -97,9 +83,8 @@ module branch_unit_tb;
             $display("[PASS] JAL verified: pc_sel=%b, target=0x%08h", pc_sel, pc_target);
         end
 
-        // Test 6: JALR (target = (rs1 + imm) & ~1)
         branch = 0; jump = 1; is_jalr = 1;
-        rdata1 = 32'h00001005; imm = 32'h00000004; // sum = 0x1009 -> cleared LSB = 0x1008
+        rdata1 = 32'h00001005; imm = 32'h00000004; 
         #5;
         if (pc_sel !== 1'b1 || pc_target !== 32'h00001008) begin
             $display("[FAIL] JALR target failed: expected 0x1008, got 0x%08h", pc_target);
