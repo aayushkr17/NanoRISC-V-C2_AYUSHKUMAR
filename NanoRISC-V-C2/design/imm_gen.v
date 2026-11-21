@@ -1,24 +1,10 @@
-// =============================================================================
-// File: imm_gen.v
-// Module: imm_gen
-// Project: NanoRISC-V-C2 (2-Stage RV32I Core)
-// Description: Immediate Generator for RV32I base integer instruction formats:
-//              - I-type (ALU immediate, Load, JALR)
-//              - S-type (Store)
-//              - B-type (Branch conditional)
-//              - U-type (LUI, AUIPC)
-//              - J-type (JAL unconditional jump)
-// =============================================================================
-
 `timescale 1ns / 1ps
 
 module imm_gen (
-    input  wire [31:0] instr,    // 32-bit instruction word
-    input  wire [2:0]  imm_src,  // Control selector for immediate format
-    output reg  [31:0] imm       // 32-bit sign-extended immediate
+    input  wire [31:0] instr,   
+    input  wire [2:0]  imm_src, 
+    output reg  [31:0] imm      
 );
-
-    // Immediate format selectors
     localparam IMM_I = 3'b000;
     localparam IMM_S = 3'b001;
     localparam IMM_B = 3'b010;
